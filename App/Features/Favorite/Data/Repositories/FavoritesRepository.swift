@@ -50,4 +50,3 @@ public final class FavoritesRepository: FavoritesRepositoryInterface {
         }
     }
 }
-

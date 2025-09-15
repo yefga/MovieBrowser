@@ -45,7 +45,7 @@ final class MovieDetailsViewController: UIViewController {
         $0.textColor = .white
     }
     private let readMoreButton = UIButton(type: .system).then {
-        $0.setTitle("Read more", for: .normal)
+        $0.setTitle(Constants.UI.readMore, for: .normal)
         $0.contentHorizontalAlignment = .left
         $0.setTitleColor(.white, for: .normal)
     }
@@ -150,10 +150,10 @@ final class MovieDetailsViewController: UIViewController {
     private func bind() {
         guard let model = viewModel.movie else { return }
         titleLabel.text = model.title
-        metaLabel.text = [model.releaseDateText, "Action"].compactMap { $0 }.joined(separator: " · ")
-        overviewLabel.text = model.overview ?? "No overview"
+        metaLabel.text = [model.releaseDateText, Constants.UI.defaultGenre].compactMap { $0 }.joined(separator: " · ")
+        overviewLabel.text = model.overview ?? Constants.UI.noOverview
 
-        if let base = URL(string: "https://image.tmdb.org/t/p/w200/\(model.posterPath ?? .empty)") {
+        if let base = URL(string: Constants.Image.tmdbBaseW200 + (model.posterPath ?? .empty)) {
             poster.setImage(url: model.posterURL(base: base), loader: ImageLoaderRegistry.loader)
         }
 
@@ -162,7 +162,7 @@ final class MovieDetailsViewController: UIViewController {
         if let overviewText = model.overview, !overviewText.isEmpty {
             readMoreButton.isHidden = false
             overviewLabel.numberOfLines = 2
-            readMoreButton.setTitle("Read more", for: .normal)
+            readMoreButton.setTitle(Constants.UI.readMore, for: .normal)
         } else {
             readMoreButton.isHidden = true
             overviewLabel.numberOfLines = 0
@@ -177,10 +177,10 @@ final class MovieDetailsViewController: UIViewController {
     @objc private func toggleReadMore() {
         if overviewLabel.numberOfLines == 0 {
             overviewLabel.numberOfLines = 2
-            readMoreButton.setTitle("Read more", for: .normal)
+            readMoreButton.setTitle(Constants.UI.readMore, for: .normal)
         } else {
             overviewLabel.numberOfLines = 0
-            readMoreButton.setTitle("Read less", for: .normal)
+            readMoreButton.setTitle(Constants.UI.readLess, for: .normal)
         }
     }
 }

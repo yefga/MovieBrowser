@@ -11,7 +11,6 @@ import MoviePersistence
 
 final class SearchViewModel: ObservableObject {
     
-    // MARK: - Init
     init(
         useCase: SearchMoviesUseCaseInterface,
         favoritesUseCase: FavoritesRepositoryInterface
@@ -19,7 +18,6 @@ final class SearchViewModel: ObservableObject {
         self.useCase = useCase
         self.favoritesUseCase = favoritesUseCase
     }
-    // MARK: - Dependencies
     private let useCase: SearchMoviesUseCaseInterface
     private let favoritesUseCase: FavoritesRepositoryInterface
     
@@ -30,7 +28,6 @@ final class SearchViewModel: ObservableObject {
     var onReload: (() -> Void)?
     var onStateChange: ((State) -> Void)?
     
-    // MARK: - Paging / Concurrency
     private var page: Int = 1
     private var hasMore: Bool = false
     private var searchTask: Task<Void, Never>?
@@ -44,6 +41,10 @@ final class SearchViewModel: ObservableObject {
         favoritesUseCase.setFavorite(item: item)
     }
 
+    func viewDidLoad() {
+        onStateChange?(.initial)
+    }
+    
     func updateQuery(_ text: String) {
         query = text
         resetPaging()
@@ -65,6 +66,10 @@ final class SearchViewModel: ObservableObject {
                 try? await Task.sleep(nanoseconds: 300_000_000)
                 await self?.performSearch(reset: true)
             }
+        } else {
+            if rows.isEmpty {
+                onStateChange?(.initial)
+            }
         }
     }
     
@@ -76,7 +81,6 @@ final class SearchViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Private
     
     private func resetPaging() {
         page = 1
@@ -105,7 +109,6 @@ final class SearchViewModel: ObservableObject {
         switch result {
         case .success(let paged):
             guard let paged else {
-                // No network + no cache
                 state = .error(message: "Couldn’t load results. Please try again.")
                 title = "Search Movies"
                 onStateChange?(state)
@@ -124,7 +127,7 @@ final class SearchViewModel: ObservableObject {
             
             let total = rows.count
             if total == 0 {
-                title = "Search Movies"
+                title = "No movie for \(query)"
             } else {
                 title = "Found \(total) " + (total == 1 ? "movie" : "movies")
             }
@@ -152,15 +155,5 @@ final class SearchViewModel: ObservableObject {
         case .notFound:
             return "Result not found"
         }
-    }
-}
-
-extension SearchViewModel {
-    enum State: Equatable {
-        case idle
-        case loading
-        case loaded(hasMore: Bool)
-        case empty
-        case error(message: String)
     }
 }

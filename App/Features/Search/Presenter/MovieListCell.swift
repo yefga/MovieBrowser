@@ -22,15 +22,6 @@ final class MovieListCell: UITableViewCell {
         $0.numberOfLines = 2
         $0.textColor = .label
     }
-    private let badgeLabel = PaddingLabel().then {
-        $0.textColor = .systemBackground
-        $0.backgroundColor = .label.withAlphaComponent(0.85)
-        $0.layer.cornerRadius = 6
-        $0.layer.masksToBounds = true
-        $0.font = .systemFont(ofSize: 12, weight: .semibold)
-        $0.horizontalPadding = 6
-        $0.verticalPadding = 2
-    }
     private let metaLabel = UILabel().then {
         $0.font = .preferredFont(forTextStyle: .subheadline)
         $0.textColor = .secondaryLabel
@@ -85,7 +76,6 @@ final class MovieListCell: UITableViewCell {
 
         poster.image = nil
         titleLabel.text = nil
-        badgeLabel.text = nil
         metaLabel.text = nil
         statusLabel.text = nil
         
@@ -120,9 +110,7 @@ extension MovieListCell {
     
     func configure(_ model: Movie) {
         titleLabel.text = model.title
-        badgeLabel.isHidden = (model.adult == true) == false
-        badgeLabel.text = (model.adult == true) ? "🔞" : nil
-        metaLabel.text = model.releaseDateText ?? ""
+        metaLabel.text = model.releaseDateText ?? .empty
         if let lang = model.originalLanguage, !lang.isEmpty {
             originalLanguageLabel.text = lang.uppercased()
             originalLanguageLabel.isHidden = false
@@ -166,14 +154,6 @@ extension MovieListCell {
 private extension MovieListCell {
     func configureUI() {
         contentView.backgroundColor = .systemBackground
-        let titleRow = UIStackView(arrangedSubviews: [titleLabel, badgeLabel]).then {
-            $0.axis = .horizontal
-            $0.alignment = .firstBaseline
-            $0.spacing = 8
-        }
-
-        badgeLabel.setContentHuggingPriority(.required, for: .horizontal)
-
         let chipsRow = UIStackView(arrangedSubviews: [originalLanguageLabel, voteAverageLabel]).then {
             $0.axis = .horizontal
             $0.alignment = .leading
@@ -181,7 +161,7 @@ private extension MovieListCell {
         }
 
         let rightStack = UIStackView(arrangedSubviews: [
-            titleRow,
+            titleLabel,
             metaLabel,
             chipsRow,
             statusLabel

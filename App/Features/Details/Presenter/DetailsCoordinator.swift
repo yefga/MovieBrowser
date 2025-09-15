@@ -10,8 +10,8 @@
 import UIKit
 import SwiftUI
 
-final class DetailsCoordinator {
-    private let navigationController: UINavigationController
+final class DetailsCoordinator: Coordinator {
+    let navigationController: UINavigationController
     private let movieID: Int
     private let container: AppContainer
 

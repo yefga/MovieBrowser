@@ -10,9 +10,12 @@ import UIKit
 final class FavoritesCoordinator: Coordinator {
     let navigationController: UINavigationController
     private let container: AppContainer
-    var onSelect: ((Int) -> Void)?
+    private var childCoordinators: [Coordinator] = []
 
-    init(navigationController: UINavigationController, container: AppContainer) {
+    init(
+        navigationController: UINavigationController,
+        container: AppContainer
+    ) {
         self.navigationController = navigationController
         self.container = container
     }
@@ -22,13 +25,21 @@ final class FavoritesCoordinator: Coordinator {
             useCase: FavoriteMovieUseCase(repository: container.favoritesRepository)
         )
         let viewController = FavoritesViewController(viewModel: viewModel)
-        self.onSelect = { [weak self] id in
+        viewController.onSelect = { [weak self] id in
             guard let self else { return }
-            let details = DetailsCoordinator(navigationController: self.navigationController,
-                                             movieID: id,
-                                             container: self.container)
+            let details = DetailsCoordinator(
+                navigationController: navigationController,
+                movieID: id,
+                container: container
+            )
+            self.childCoordinators.append(details)
             details.start()
         }
         navigationController.pushViewController(viewController, animated: true)
+    }
+
+    private func removeChild(_ child: Coordinator?) {
+        guard let child else { return }
+        childCoordinators.removeAll { $0 === child }
     }
 }

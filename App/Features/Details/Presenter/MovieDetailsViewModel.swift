@@ -40,10 +40,10 @@ final class MovieDetailsViewModel: ObservableObject {
         }
     }
     
-    
     func toggleFavorite() {
+        isFavorite.toggle()
         var item = movie
-        item?.isFavorite?.toggle()
+        item?.isFavorite = isFavorite
         if let item {
             favoriteUseCase.setFavorite(item: item)
         }

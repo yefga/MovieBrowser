@@ -26,11 +26,25 @@ final class SearchViewController: UIViewController {
         $0.addTarget(self, action: #selector(didPullToRefresh), for: .valueChanged)
     }
     private var dataSource: UITableViewDiffableDataSource<Int, Movie>!
+    private let imageView = UIImageView().then {
+        $0.image = UIImage(named: "initial")
+        $0.contentMode = .scaleAspectFit
+    }
+    private lazy var backgroundImageInitial = UIView().then {
+        $0.contentMode = .scaleAspectFit
+        $0.clipsToBounds = true
+        $0.addSubview(imageView)
+        imageView.snp.makeConstraints { make in
+            make.size.equalTo(300)
+            make.center.equalToSuperview()
+        }
+    }
     private lazy var tableView = UITableView().then {
         $0.registerClass(forCellClass: MovieListCell.self)
         $0.alwaysBounceVertical = true
         $0.delegate = self
         $0.refreshControl = refreshControl
+        $0.backgroundView = backgroundImageInitial
     }
     private lazy var searchContainer = UIView().then {
         $0.layer.cornerRadius = 22
@@ -97,10 +111,21 @@ final class SearchViewController: UIViewController {
         $0.hidesWhenStopped = true
         $0.color = .secondaryLabel
     }
-    // Keep references to update icons reliably when using multiple right bar buttons
     private var darkModeBarButton: UIBarButtonItem?
     private var favoritesBarButton: UIBarButtonItem?
     
+    private lazy var dismissTapGesture: UITapGestureRecognizer = {
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleTapToDismiss))
+        tap.cancelsTouchesInView = false
+        return tap
+    }()
+    
+    override func viewWillAppear(_ animated: Bool) {
+        DispatchQueue.main.async { [weak self] in
+            self?.tableView.reloadData()
+        }
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         title = viewModel.title
@@ -108,10 +133,12 @@ final class SearchViewController: UIViewController {
         
         configureSearchBar()
         configureTableView()
-        bindViewModel()
         configureDarkModeButton()
+        configureFloatingSearchField()
+        bindViewModel()
         applyNavigationBarAppearance(for: traitCollection.userInterfaceStyle)
-        configureFloatingSearchField()        
+        view.addGestureRecognizer(dismissTapGesture)
+        viewModel.viewDidLoad()
     }
     
     private func configureSearchBar() {
@@ -157,8 +184,10 @@ final class SearchViewController: UIViewController {
                 refreshControl.endRefreshing()
                 title = viewModel.title
                 clearButton.isHidden = viewModel.rows.isEmpty
-                self.searchTextField.rightViewMode = .never
-                self.loadingIndicator.stopAnimating()
+                searchTextField.rightViewMode = .never
+                loadingIndicator.stopAnimating()
+//                tableView.backgroundView = viewModel.rows.isEmpty && (searchTextField.text?.count ?? .zero) < 3 ? backgroundImageInitial : nil
+
             }
         }
         
@@ -177,8 +206,13 @@ final class SearchViewController: UIViewController {
         dataSource.apply(snapshot, animatingDifferences: true)
     }
     
-    private func handleState(_ state: SearchViewModel.State) {
+    private func handleState(_ state: State) {
         switch state {
+        case .initial:
+            if searchTextField.text?.count ?? .zero < 3 && viewModel.rows.isEmpty {
+                imageView.image = .init(named: "initial")
+                tableView.backgroundView = backgroundImageInitial
+            }
         case .loading:
             searchTextField.rightViewMode = .always
             loadingIndicator.startAnimating()
@@ -187,14 +221,18 @@ final class SearchViewController: UIViewController {
             loadingIndicator.stopAnimating()
             view.makeToast(message)
             refreshControl.endRefreshing()
+
         case .empty:
             searchTextField.rightViewMode = .never
             loadingIndicator.stopAnimating()
             refreshControl.endRefreshing()
+            imageView.image = .init(named: "no_data")
+            tableView.backgroundView = backgroundImageInitial
         default:
             searchTextField.rightViewMode = .never
             loadingIndicator.stopAnimating()
             refreshControl.endRefreshing()
+
         }
     }
     
@@ -221,6 +259,7 @@ final class SearchViewController: UIViewController {
         UIView.animate(withDuration: 0.2) {
             self.view.layoutIfNeeded()
         }
+
     }
 
     @objc private func clearTapped() {
@@ -231,10 +270,17 @@ final class SearchViewController: UIViewController {
         UIView.animate(withDuration: 0.2) {
             self.view.layoutIfNeeded()
         }
+
+    }
+    
+    @objc private func handleTapToDismiss() {
+        guard dismissTapGesture.isEnabled else { return }
+        if searchTextField.isFirstResponder {
+            searchTextField.resignFirstResponder()
+        }
     }
 }
 
-// MARK: - UITextFieldDelegate
 extension SearchViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
@@ -242,7 +288,6 @@ extension SearchViewController: UITextFieldDelegate {
     }
 }
 
-// MARK: - UITableViewDelegate
 extension SearchViewController: UITableViewDelegate {
     func tableView(
         _ tableView: UITableView,
@@ -270,7 +315,6 @@ extension SearchViewController: UITableViewDelegate {
 extension SearchViewController {
     private func configureDarkModeButton() {
         let isDark = traitCollection.userInterfaceStyle == .dark
-        // Configure dark mode toggle button
         let darkButton = UIBarButtonItem(
             image: UIImage.symbol(isDark ? .sunMaxFill : .moonFill),
             style: .plain,
@@ -280,7 +324,6 @@ extension SearchViewController {
         darkButton.accessibilityLabel = isDark ? "Switch to Light Mode" : "Switch to Dark Mode"
         self.darkModeBarButton = darkButton
 
-        // Configure favorites button
         let favoritesButton = UIBarButtonItem(
             image: UIImage.symbol(.heart),
             style: .plain,
@@ -331,7 +374,7 @@ extension SearchViewController {
             appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
             appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
         } else {
-            appearance.backgroundColor = UIColor.systemBackground
+            appearance.backgroundColor = UIColor.white
             appearance.titleTextAttributes = [.foregroundColor: UIColor.label]
             appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.label]
         }

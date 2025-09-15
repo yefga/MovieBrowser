@@ -15,8 +15,7 @@ public final class DefaultRequestBuilder: RequestBuilding {
         var comps = URLComponents(url: config.baseURL, resolvingAgainstBaseURL: false)
         comps?.path += endpoint.path
 
-        var query = endpoint.query
-//        query["api_key"] = config.apiKey
+        let query = endpoint.query
         comps?.queryItems = query?.compactMap { URLQueryItem(name: $0.key, value: $0.value) }
 
         guard let url = comps?.url else { throw NetworkError.invalidURL }

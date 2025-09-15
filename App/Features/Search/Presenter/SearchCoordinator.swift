@@ -6,12 +6,12 @@
 //
 
 import UIKit
-import SwiftUI
 import MoviePersistence
 
 final class SearchCoordinator: Coordinator {
     let navigationController: UINavigationController
     private let container: AppContainer
+    private var childCoordinators: [Coordinator] = []
 
     init(navigationController: UINavigationController, container: AppContainer) {
         self.navigationController = navigationController
@@ -33,6 +33,7 @@ final class SearchCoordinator: Coordinator {
                 movieID: movieID,
                 container: container
             )
+            self.childCoordinators.append(details)
             details.start()
         }
 
@@ -43,9 +44,15 @@ final class SearchCoordinator: Coordinator {
                 navigationController: navigationController,
                 container: container
             )
+            self.childCoordinators.append(favorites)
             favorites.start()
         }
         navigationController.setViewControllers([viewController], animated: false)
+    }
+    
+    private func removeChild(_ child: Coordinator?) {
+        guard let child else { return }
+        childCoordinators.removeAll { $0 === child }
     }
     
 }
