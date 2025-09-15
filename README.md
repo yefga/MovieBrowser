@@ -79,13 +79,13 @@ Core Data is used for caching results and storing favorites.
 ## 📸 Screenshots
 
 ### 🔍 Search
-<img src="docs/screenshots/search.png" width="250"/>
+<img src="screenshots/search.png" width="250"/>
 
 ### 📖 Details
-<img src="docs/screenshots/details.png" width="250"/>
+<img src="screenshots/details.png" width="250"/>
 
 ### ❤️ Favorites
-<img src="docs/screenshots/favorites.png" width="250"/>
+<img src="screenshots/favorites.png" width="250"/>
 
 ---
 
@@ -114,8 +114,3 @@ UI was designed with adaptability in mind. Added a toggle for quick testing.
 
 ## 🧪 Tests
 Unit tests are **coming soon**. The project has been structured to make testing straightforward.
-
----
-
-## 📄 License
-MIT
