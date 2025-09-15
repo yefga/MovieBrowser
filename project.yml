@@ -1,0 +1,192 @@
+name: MovieBrowser
+options:
+  minimumXcodeGenVersion: 2.41.0
+  deploymentTarget:
+    iOS: "15.0"
+  postGenCommand: >
+    echo "✅ Project generated. Open MovieBrowser.xcodeproj"
+
+configs:
+  Debug: debug
+  Release: release
+
+packages:
+  netfox:
+    url: https://github.com/kasketis/netfox.git
+    from: 1.21.0
+
+settings:
+  base:
+    SWIFT_VERSION: 5.9
+    PRODUCT_BUNDLE_IDENTIFIER: com.yefga.MovieBrowser
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    CURRENT_PROJECT_VERSION: 1
+    MARKETING_VERSION: 1.0
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+
+configFiles:
+  Debug: Config/Debug.xcconfig
+  Release: Config/Release.xcconfig
+
+targets:
+  # ──────────────────────────────
+  # Core (Networking only)
+  # ──────────────────────────────
+  MovieCore:
+    type: framework
+    platform: iOS
+    sources:
+      - path: Sources/Core
+    info:
+      path: Sources/Core/Info.plist
+    headers:
+      public:
+        - Sources/Core/include/MovieCore.h
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.yefga.MovieBrowser.core
+    dependencies:
+      - sdk: Foundation.framework
+      - sdk: UIKit.framework
+
+  # ──────────────────────────────
+  # Persistence (Core Data, cache)
+  # ──────────────────────────────
+  MoviePersistence:
+    type: framework
+    platform: iOS
+    sources:
+      - path: Sources/Persistence
+    resources:
+      - path: Sources/Persistence/Model.xcdatamodeld
+    info:
+      path: Sources/Persistence/Info.plist
+    headers:
+      public:
+        - Sources/Persistence/include/MoviePersistence.h
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.yefga.MovieBrowser.persistence
+    dependencies:
+      - target: MovieCore
+      - sdk: CoreData.framework
+
+  # ──────────────────────────────
+  # UI (reusable components / design system)
+  # ──────────────────────────────
+  MovieUI:
+    type: framework
+    platform: iOS
+    sources:
+      - path: Sources/UI
+    info:
+      path: Sources/UI/Info.plist
+    headers:
+      public:
+        - Sources/UI/include/MovieUI.h
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.yefga.MovieBrowser.ui
+    dependencies:
+      - target: MovieCore
+      - sdk: UIKit.framework
+
+  # ──────────────────────────────
+  # App
+  # ──────────────────────────────
+  MovieBrowser:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+    resources:
+      - path: App/Resources/Assets.xcassets
+      - path: App/Resources/LaunchScreen.storyboard
+      - path: App/Resources/Localized.strings
+    entitlements:
+      path: App/MovieBrowser.entitlements
+      optional: true
+    info:
+      path: App/Resources/Info.plist
+      properties:
+        TMDB_API_KEY: $(TMDB_API_KEY)
+        TMDB_API_TOKEN: $(TMDB_API_TOKEN)
+        TMDB_API_BASE: https://api.themoviedb.org/3
+        UILaunchStoryboardName: LaunchScreen
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleApplication:
+              - UISceneConfigurationName: Default Configuration
+                UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).SceneDelegate
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.yefga.MovieBrowser
+        TARGETED_DEVICE_FAMILY: "1,2"
+        IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+        UILaunchScreen_Generation: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - target: MovieCore
+      - target: MoviePersistence
+      - target: MovieUI
+      - sdk: UIKit.framework
+      - sdk: CoreData.framework
+      - package: netfox
+    preBuildScripts:
+      - name: SwiftLint
+        basedOnDependencyAnalysis: false
+        script: |
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          SWIFTLINT="$(command -v swiftlint || true)"
+          if [[ -z "$SWIFTLINT" ]]; then
+            echo "warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint"
+            exit 0
+          fi
+          "$SWIFTLINT" --config "$SRCROOT/.swiftlint.yml"
+
+  MovieBrowserTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests/Unit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.yefga.MovieBrowserTests
+    dependencies:
+      - target: MovieBrowser
+      - target: MovieCore
+      - target: MoviePersistence
+      - target: MovieUI
+      - sdk: XCTest.framework
+
+  MovieBrowserUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: Tests/UITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.yefga.MovieBrowserUITests
+    dependencies:
+      - target: MovieBrowser
+      - sdk: XCTest.framework
+
+schemes:
+  MovieBrowser:
+    build:
+      targets:
+        MovieBrowser: all
+        MovieCore: [build]
+        MoviePersistence: [build]
+        MovieUI: [build]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - name: MovieBrowserTests
+        - name: MovieBrowserUITests
+    archive:
+      config: Release

@@ -1,0 +1,17 @@
+# Xcode
+DerivedData/
+*.xcworkspace/
+xcuserdata/
+project.xcworkspace/
+
+# SwiftPM
+.build/
+
+# XcodeGen
+project.yml.lock
+
+# Secrets
+Config/Secrets.xcconfig
+
+# Misc
+.DS_Store

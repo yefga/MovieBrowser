@@ -1,0 +1,42 @@
+# .swiftlint.yml
+
+identifier_name:
+  min_length:
+    error: 3   
+  excluded:    
+    - id       
+    - url      
+    - x
+    - y
+    - i
+    - j
+
+included:
+  - App
+  - Sources
+  - Tests
+
+excluded:
+  - Carthage
+  - Pods
+  - App/Resources/Generated
+  - Sources/**/include
+
+disabled_rules:
+  - line_length
+  - trailing_whitespace
+  - force_cast
+  - force_try
+  - identifier_name
+
+opt_in_rules:
+  - unused_declaration
+  - redundant_nil_coalescing
+
+type_body_length:
+  warning: 300
+  error: 500
+
+function_body_length:
+  warning: 60
+  error: 100
