@@ -35,5 +35,16 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         self.window = window
         self.appCoordinator = coordinator
         window.makeKeyAndVisible()
+        NetworkMonitor.shared.start(on: window)
+    }
+    
+    func sceneDidEnterBackground(_ scene: UIScene) {
+        NetworkMonitor.shared.stop()
+    }
+    
+    func sceneWillEnterForeground(_ scene: UIScene) {
+        if let window = window {
+            NetworkMonitor.shared.start(on: window)
+        }
     }
 }

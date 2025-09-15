@@ -186,8 +186,6 @@ final class SearchViewController: UIViewController {
                 clearButton.isHidden = viewModel.rows.isEmpty
                 searchTextField.rightViewMode = .never
                 loadingIndicator.stopAnimating()
-//                tableView.backgroundView = viewModel.rows.isEmpty && (searchTextField.text?.count ?? .zero) < 3 ? backgroundImageInitial : nil
-
             }
         }
         

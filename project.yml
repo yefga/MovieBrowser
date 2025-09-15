@@ -14,6 +14,12 @@ packages:
   netfox:
     url: https://github.com/kasketis/netfox.git
     from: 1.21.0
+  SnapKit:
+    url: https://github.com/SnapKit/SnapKit.git
+    from: 5.6.0
+  IQKeyboardManagerSwift:
+    url: https://github.com/hackiftekhar/IQKeyboardManager.git
+    from: 6.5.0
 
 settings:
   base:
@@ -134,6 +140,8 @@ targets:
       - sdk: UIKit.framework
       - sdk: CoreData.framework
       - package: netfox
+      - package: SnapKit
+      - package: IQKeyboardManagerSwift
     preBuildScripts:
       - name: SwiftLint
         basedOnDependencyAnalysis: false
