@@ -23,7 +23,6 @@ final class MovieDetailsViewController: UIViewController {
         $0.contentMode = .scaleAspectFill
         $0.clipsToBounds = true
     }
-    private let gradientLayer = CAGradientLayer()
     private let overlayView = UIView().then {
         $0.isUserInteractionEnabled = false
         $0.backgroundColor = .clear
@@ -108,7 +107,7 @@ final class MovieDetailsViewController: UIViewController {
         view.addSubview(poster)
         view.addSubview(overlayView)
         view.addSubview(scrollView)
-        overlayView.layer.insertSublayer(overlayGradientLayer, at: 0)
+        overlayView.layer.insertSublayer(overlayGradientLayer, at: .zero)
         overlayGradientLayer.colors = [
             UIColor.clear.cgColor,
             UIColor.black.withAlphaComponent(0.4).cgColor,
@@ -158,14 +157,13 @@ final class MovieDetailsViewController: UIViewController {
         }
 
         navigationItem.rightBarButtonItem?.image = UIImage.symbol(viewModel.isFavorite ? .heartFill : .heart)
-
-        if let overviewText = model.overview, !overviewText.isEmpty {
-            readMoreButton.isHidden = false
-            overviewLabel.numberOfLines = 2
-            readMoreButton.setTitle(Constants.UI.readMore, for: .normal)
-        } else {
-            readMoreButton.isHidden = true
-            overviewLabel.numberOfLines = 0
+        
+        viewModel.reloadDetail = { [weak self] isSuccess in
+            guard let self else { return }
+            if !isSuccess {
+                view.makeToast(viewModel.errorMessage)
+            }
+            
         }
     }
 
@@ -175,11 +173,11 @@ final class MovieDetailsViewController: UIViewController {
     }
 
     @objc private func toggleReadMore() {
-        if overviewLabel.numberOfLines == 0 {
+        if overviewLabel.numberOfLines == .zero {
             overviewLabel.numberOfLines = 2
             readMoreButton.setTitle(Constants.UI.readMore, for: .normal)
         } else {
-            overviewLabel.numberOfLines = 0
+            overviewLabel.numberOfLines = .zero
             readMoreButton.setTitle(Constants.UI.readLess, for: .normal)
         }
     }

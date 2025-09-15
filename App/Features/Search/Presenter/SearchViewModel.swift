@@ -33,8 +33,6 @@ final class SearchViewModel: ObservableObject {
     private var searchTask: Task<Void, Never>?
     private let limitCharacter: Int = 3
     
-    @Published private(set) var movies: [Movie] = []
-    
     func toggleFavorite(movie: Movie) {
         var item = movie
         item.isFavorite?.toggle()
@@ -157,3 +155,4 @@ final class SearchViewModel: ObservableObject {
         }
     }
 }
+

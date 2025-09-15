@@ -1,0 +1,71 @@
+# SwiftLint Configuration
+# Focused on catching unused code and maintaining code quality
+
+# Use the Xcode-friendly reporter
+reporter: xcode
+
+# Paths to ignore
+excluded:
+  - Carthage
+  - Pods
+  - DerivedData
+  - .build
+  - Generated
+  - Vendor
+
+# Enable opt-in rules that are broadly safe
+opt_in_rules:
+  - unused_declaration
+  - unused_import
+  - redundant_type_annotation
+  - redundant_string_enum_value
+  - redundant_optional_initialization
+  - empty_xctest_method
+  - private_action
+  - private_outlet
+  - fatal_error_message
+  - force_unwrapping
+  - discouraged_optional_boolean
+  - discouraged_object_literal
+  - discouraged_optional_collection
+  - trailing_closure
+  - vertical_whitespace_between_cases
+  - yoda_condition
+
+# Disable rules that may be noisy initially; adjust later if desired
+disabled_rules:
+  - file_length
+  - type_body_length
+  - function_body_length
+  - cyclomatic_complexity
+  - line_length
+
+# Rule-specific configurations
+force_unwrapping:
+  severity: warning
+
+unused_declaration:
+  severity: warning
+
+unused_import:
+  severity: warning
+
+redundant_type_annotation:
+  severity: warning
+
+# Customize identifier name to allow common short names like id
+identifier_name:
+  excluded:
+    - id
+    - x
+    - y
+    - i
+    - j
+
+# Allow some flexibility for test code
+nesting:
+  type_level:
+    warning: 2
+
+# Swift version (optional; helps some rules)
+swift_version: 6.0

@@ -12,7 +12,7 @@ final class MovieDetailsViewModel: ObservableObject {
     @Published var isFavorite: Bool = false
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
-    
+    var reloadDetail: ((_ isSuccess: Bool) -> Void)?
     private let movieDetailsUseCase: GetMovieDetailsUseCaseInterface
     private let favoriteUseCase: FavoriteMovieUseCaseInterface
     private let movieID: Int
@@ -35,8 +35,10 @@ final class MovieDetailsViewModel: ObservableObject {
             if let id = movie?.id {
                 self.isFavorite = favoriteUseCase.isFavorite(by: id)
             }
+            reloadDetail?(true)
         case .failure(let error):
             self.errorMessage = String(describing: error)
+            reloadDetail?(false)
         }
     }
     
