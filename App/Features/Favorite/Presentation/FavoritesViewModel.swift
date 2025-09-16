@@ -12,7 +12,6 @@ final class FavoritesViewModel: ObservableObject {
     private let useCase: FavoriteMovieUseCaseInterface
 
     @Published private(set) var rows: [Movie] = []
-    var onReload: (() -> Void)?
 
     init(
         useCase: FavoriteMovieUseCaseInterface
@@ -22,13 +21,11 @@ final class FavoritesViewModel: ObservableObject {
 
     func load() {
         rows = useCase.getFavorites() ?? []
-        onReload?()
     }
     
     func toggleFavorite(movie: Movie) {
         var item = movie
         item.isFavorite?.toggle()
         useCase.setFavorite(item: item)
-        onReload?()
     }
 }

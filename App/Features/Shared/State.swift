@@ -8,10 +8,11 @@
 import Foundation
 
 enum State: Equatable {
+    case success
     case initial
     case idle
     case loading
-    case loaded(hasMore: Bool)
+    case hasMore
     case empty
     case error(message: String)
 }

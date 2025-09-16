@@ -9,8 +9,9 @@ import Combine
 import Foundation
 import MoviePersistence
 
+@MainActor
 final class SearchViewModel: ObservableObject {
-    
+
     init(
         useCase: SearchMoviesUseCaseInterface,
         favoritesUseCase: FavoritesRepositoryInterface
@@ -20,18 +21,17 @@ final class SearchViewModel: ObservableObject {
     }
     private let useCase: SearchMoviesUseCaseInterface
     private let favoritesUseCase: FavoritesRepositoryInterface
-    
+
     @Published private(set) var rows: [Movie] = []
     @Published private(set) var state: State = .idle
-    @Published var query: String = ""
-    @Published var title: String = "Search Movies"
-    var onReload: (() -> Void)?
-    var onStateChange: ((State) -> Void)?
+    @Published private(set) var title: String = ScreenTitle.initial.text
     
+    private var query: String = ""
     private var page: Int = 1
-    private var hasMore: Bool = false
     private var searchTask: Task<Void, Never>?
     private let limitCharacter: Int = 3
+    private(set) var totalPage: Int = 0
+    private(set) var totalResults: Int = 0
     
     func toggleFavorite(movie: Movie) {
         var item = movie
@@ -40,119 +40,124 @@ final class SearchViewModel: ObservableObject {
     }
 
     func viewDidLoad() {
-        onStateChange?(.initial)
+        state = .initial
     }
-    
+
     func updateQuery(_ text: String) {
         query = text
         resetPaging()
-        onReload?()
-        
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
-            title = "Search Movies"
+
+        if text.isEmpty {
+            title = ScreenTitle.initial.text
             state = .idle
-            onStateChange?(state)
             searchTask?.cancel()
             searchTask = nil
             return
         }
-        
-        if trimmed.count >= limitCharacter {
-            searchTask?.cancel()
-            searchTask = Task { [weak self] in
-                try? await Task.sleep(nanoseconds: 300_000_000)
-                await self?.performSearch(reset: true)
-            }
+
+        if text.count >= limitCharacter {
+            performTask()
         } else {
             if rows.isEmpty {
-                onStateChange?(.initial)
+                state = .initial
             }
         }
     }
-    
+
     func loadNextPageIfNeeded(appearingRow index: Int) {
-        guard index >= rows.count - 4, hasMore, searchTask == nil else { return }
-        page += 1
-        searchTask = Task { [weak self] in
-            await self?.performSearch(reset: false)
+        if index == rows.count - 1 && totalResults <= rows.count && totalPage < page {
+            page += 1
+            state = .hasMore
+            performTask()
         }
     }
     
-    
+    private func performTask() {
+        searchTask?.cancel()
+        searchTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            await self?.performSearch()
+        }
+    }
+
     private func resetPaging() {
         page = 1
-        hasMore = false
+        state = .initial
         rows = []
     }
-    
-    private func performSearch(reset: Bool) async {
+
+    private func performSearch() async {
         searchTask = nil
-        
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.isEmpty == false else {
+    
+        guard query.isEmpty == false else {
             state = .idle
-            title = "Search Movies"
-            onStateChange?(state)
+            title = ScreenTitle.initial.text
             return
         }
-        
-        if reset {
-            state = .loading
-            onStateChange?(state)
-        }
-        
-        let result = await useCase.execute(query: trimmed, page: page)
-        
+
+        let result = await useCase.execute(query: query, page: page)
+
         switch result {
         case .success(let paged):
+    
             guard let paged else {
                 state = .error(message: "Couldn’t load results. Please try again.")
-                title = "Search Movies"
-                onStateChange?(state)
+                title = ScreenTitle.initial.text
                 return
             }
+            totalPage = paged.totalPages ?? .zero
+            totalResults = paged.totalResults ?? .zero
             
-            let newRows: [Movie] = (paged.items ?? []).map { movie in
-                var newMovie = movie
-                if let id = movie.id { newMovie.isFavorite = favoritesUseCase.isFavorite(id: id) }
-                return newMovie
+            let newRows = (paged.items ?? []).compactMap {
+                var movie = $0
+                if let id = movie.id {
+                    movie.isFavorite = favoritesUseCase.isFavorite(id: id)
+                }
+                return movie
             }
-            if reset { rows = newRows } else { rows.append(contentsOf: newRows) }
-            
-            hasMore = paged.hasMore ?? false
-            state = rows.isEmpty ? .empty : .loaded(hasMore: hasMore)
-            
-            let total = rows.count
-            if total == 0 {
-                title = "No movie for \(query)"
+            if state == .hasMore {
+                rows.append(contentsOf: newRows)
             } else {
-                title = "Found \(total) " + (total == 1 ? "movie" : "movies")
+                self.rows = newRows
             }
             
-            onReload?()
-            onStateChange?(state)
-            
+            state = .success
+
+            let total = rows.count
+            title = total == .zero ? ScreenTitle.notFound.text : ScreenTitle.found(total).text
+
         case .failure(let error):
             state = .error(message: message(for: error))
-            title = "Search Movies"
-            onStateChange?(state)
-        }
-    }
-    
-    private func message(for error: MovieError) -> String {
-        switch error {
-        case .noInternet:
-            return "No internet connection. Showing offline data if available."
-        case .timeout:
-            return "The request timed out. Please try again."
-        case .server(let message):
-            return message
-        case .unknown:
-            return "Something went wrong."
-        case .notFound:
-            return "Result not found"
+            title = ScreenTitle.initial.text
         }
     }
 }
 
+private extension SearchViewModel {
+    func message(for error: MovieError) -> String {
+        switch error {
+        case .noInternet: return "No internet connection. Showing offline data if available."
+        case .timeout: return "The request timed out. Please try again."
+        case .server(let message): return message
+        case .unknown: return "Something went wrong."
+        case .notFound: return "Result not found"
+        }
+    }
+
+    enum ScreenTitle {
+        case initial
+        case notFound
+        case found(Int)
+
+        var text: String {
+            switch self {
+            case .initial:
+                return "Search Movies"
+            case .notFound:
+                return "No results found"
+            case .found(let total):
+                return "Found \(total) movie\(total > 1 ? "s" : "")"
+            }
+        }
+    }
+}

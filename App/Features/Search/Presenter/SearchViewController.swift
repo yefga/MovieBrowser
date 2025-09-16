@@ -21,7 +21,7 @@ final class SearchViewController: UIViewController {
     
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     private let viewModel: SearchViewModel
-
+    private let cancelBag = CancelBag()
     private lazy var refreshControl = UIRefreshControl().then {
         $0.addTarget(self, action: #selector(didPullToRefresh), for: .valueChanged)
     }
@@ -177,24 +177,51 @@ final class SearchViewController: UIViewController {
     }
     
     private func bindViewModel() {
-        viewModel.onReload = { [weak self] in
-            DispatchQueue.main.async { [weak self] in
-                guard let self else { return }
+        viewModel.$rows.sink { [weak self] rows in
+            guard let self else { return }
+            clearButton.isHidden = rows.isEmpty
+            
+        }.cancel(with: cancelBag)
+
+        viewModel.$state.sink { [weak self] in
+            guard let self else { return }
+            switch $0 {
+            case .success:
                 applySnapshot()
-                refreshControl.endRefreshing()
-                title = viewModel.title
-                clearButton.isHidden = viewModel.rows.isEmpty
+                
+            case .initial:
+                if searchTextField.text?.count ?? .zero < 3 && viewModel.rows.isEmpty {
+                    imageView.image = .init(named: "initial")
+                    tableView.backgroundView = backgroundImageInitial
+                }
+            case .loading:
+                searchTextField.rightViewMode = .always
+                loadingIndicator.startAnimating()
+            case .error(let message):
                 searchTextField.rightViewMode = .never
                 loadingIndicator.stopAnimating()
+                view.makeToast(message)
+                refreshControl.endRefreshing()
+
+            case .empty:
+                searchTextField.rightViewMode = .never
+                loadingIndicator.stopAnimating()
+                refreshControl.endRefreshing()
+                imageView.image = .init(named: "no_data")
+                tableView.backgroundView = backgroundImageInitial
+            default:
+                searchTextField.rightViewMode = .never
+                loadingIndicator.stopAnimating()
+                refreshControl.endRefreshing()
+
             }
-        }
-        
-        viewModel.onStateChange = { [weak self] state in
-            DispatchQueue.main.async { [weak self] in
-                guard let self else { return }
-                handleState(state)
+        }.cancel(with: cancelBag)
+
+        viewModel.$title
+            .sink { [weak self] title in
+                self?.title = title
             }
-        }
+            .cancel(with: cancelBag)
     }
     
     private func applySnapshot() {
@@ -202,36 +229,6 @@ final class SearchViewController: UIViewController {
         snapshot.appendSections([0])
         snapshot.appendItems(viewModel.rows, toSection: 0)
         dataSource.apply(snapshot, animatingDifferences: true)
-    }
-    
-    private func handleState(_ state: State) {
-        switch state {
-        case .initial:
-            if searchTextField.text?.count ?? .zero < 3 && viewModel.rows.isEmpty {
-                imageView.image = .init(named: "initial")
-                tableView.backgroundView = backgroundImageInitial
-            }
-        case .loading:
-            searchTextField.rightViewMode = .always
-            loadingIndicator.startAnimating()
-        case .error(let message):
-            searchTextField.rightViewMode = .never
-            loadingIndicator.stopAnimating()
-            view.makeToast(message)
-            refreshControl.endRefreshing()
-
-        case .empty:
-            searchTextField.rightViewMode = .never
-            loadingIndicator.stopAnimating()
-            refreshControl.endRefreshing()
-            imageView.image = .init(named: "no_data")
-            tableView.backgroundView = backgroundImageInitial
-        default:
-            searchTextField.rightViewMode = .never
-            loadingIndicator.stopAnimating()
-            refreshControl.endRefreshing()
-
-        }
     }
     
     private func configureFloatingSearchField() {
@@ -268,7 +265,6 @@ final class SearchViewController: UIViewController {
         UIView.animate(withDuration: 0.2) {
             self.view.layoutIfNeeded()
         }
-
     }
     
     @objc private func handleTapToDismiss() {
