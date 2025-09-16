@@ -79,7 +79,7 @@ targets:
       - sdk: CoreData.framework
 
   # ──────────────────────────────
-  # UI (reusable components / design system)
+  # UI (design system)
   # ──────────────────────────────
   MovieUI:
     type: framework
@@ -155,14 +155,20 @@ targets:
           fi
           "$SWIFTLINT" --config "$SRCROOT/.swiftlint.yml"
 
+  # ──────────────────────────────
+  # Unit Tests
+  # ──────────────────────────────
   MovieBrowserTests:
     type: bundle.unit-test
     platform: iOS
     sources:
       - path: Tests/Unit
+      - path: Tests/Resources         # e.g. dummy APIConfig.plist for integration tests
+        optional: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.yefga.MovieBrowserTests
+        GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: MovieBrowser
       - target: MovieCore
@@ -170,18 +176,22 @@ targets:
       - target: MovieUI
       - sdk: XCTest.framework
 
+  # ──────────────────────────────
+  # UI Tests
+  # ──────────────────────────────
   MovieBrowserUITests:
     type: bundle.ui-testing
     platform: iOS
+    hostApplication: MovieBrowser       # ensure UI tests launch the app
     sources:
       - path: Tests/UITests
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.yefga.MovieBrowserUITests
+        GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: MovieBrowser
       - sdk: XCTest.framework
-
 schemes:
   MovieBrowser:
     build:
@@ -190,12 +200,31 @@ schemes:
         MovieCore: [build]
         MoviePersistence: [build]
         MovieUI: [build]
+        MovieBrowserTests: [test]
+        MovieBrowserUITests: [test]
     run:
       config: Debug
     test:
       config: Debug
+      gatherCoverage: true
+      coverageTargets:
+        - MovieBrowser
+        - MovieCore
+        - MoviePersistence
+        - MovieUI
       targets:
         - name: MovieBrowserTests
         - name: MovieBrowserUITests
     archive:
       config: Release
+
+  # Optional: a tests-only scheme (no Run)
+  MovieBrowserTests:
+    build:
+      targets:
+        MovieBrowser: all
+        MovieBrowserTests: [test]
+    test:
+      config: Debug
+      targets:
+        - name: MovieBrowserTests
