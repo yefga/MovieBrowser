@@ -77,17 +77,60 @@ final class MovieDetailsViewController: UIViewController {
     private lazy var scrollView = UIScrollView().then {
         $0.addSubview(contentContainer)
     }
+    private lazy var emptyBackgroundView = EmptyBackgroundView().then {
+        $0.configure(
+            imageName: "no_signal",
+            title: "No Signal in the Theater",
+            message: "Looks like the internet took an intermission. Refresh when you’re back online",
+            titleButton: "Try Again"
+        )
+        $0.onTap = { [weak self] in
+            self?.loadRequest()
+        }
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupFavoriteButton()
         setupBindings()
-        Task { await viewModel.load() }
+        loadRequest()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         setupTransparentNavigationBar()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        overlayGradientLayer.frame = overlayView.bounds
+    }
+    
+    @objc private func toggleFavorite() {
+        viewModel.toggleFavorite()
+    }
+    
+    @objc private func toggleReadMore() {
+        updateReadVisibility()
+    }
+
+}
+
+private extension MovieDetailsViewController {
+    func loadRequest() {
+        Task { await viewModel.load() }
+    }
+}
+
+private extension MovieDetailsViewController {
+    func setupFavoriteButton() {
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            image: UIImage.symbol(.heart),
+            style: .plain,
+            target: self,
+            action: #selector(toggleFavorite)
+        )
     }
     
     func setupTransparentNavigationBar() {
@@ -103,38 +146,8 @@ final class MovieDetailsViewController: UIViewController {
         navigationItem.title = nil
     }
     
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        overlayGradientLayer.frame = overlayView.bounds
-    }
-    
-    @objc private func toggleFavorite() {
-        viewModel.toggleFavorite()
-    }
-    
-    @objc private func toggleReadMore() {
-        if overviewLabel.numberOfLines == .zero {
-            overviewLabel.numberOfLines = 2
-            readMoreButton.setTitle(Constants.Components.readMore, for: .normal)
-        } else {
-            overviewLabel.numberOfLines = .zero
-            readMoreButton.setTitle(Constants.Components.readLess, for: .normal)
-        }
-    }
-    
-}
-
-private extension MovieDetailsViewController {
-    
     func setupUI() {
         view.backgroundColor = .systemBackground
-        
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            image: UIImage.symbol(.heart),
-            style: .plain,
-            target: self,
-            action: #selector(toggleFavorite)
-        )
         
         view.addSubview(poster)
         view.addSubview(overlayView)
@@ -175,20 +188,23 @@ private extension MovieDetailsViewController {
     func setupBindings() {
         viewModel.$movie
             .sink { [weak self] model in
-                guard let self, let model else { return }
+                guard let self, let model else {
+                    self?.navigationItem.rightBarButtonItem = nil
+                    self?.readMoreButton.isHidden = true
+                    return
+                }
                 titleLabel.text = model.title
                 metaLabel.text = [
-                    model.releaseDateText, Constants.Components.defaultGenre
+                    model.releaseDateText?.convertDate(from: .yyyyMMdd, to: .long),
+                    model.originalLanguage?.uppercased()
                 ].compactMap { $0 }.joined(separator: " · ")
                 overviewLabel.text = model.overview ?? Constants.Components.noOverview
                 
-                if let base = URL(
-                    string: Constants.Image.tmdbBaseW200 + (model.posterPath ?? .empty)
-                ) {
+                if let base = URL(string: Constants.Image.tmdbBaseW200 + (model.posterPath ?? .empty)) {
                     poster.setImage(url: model.posterURL(base: base), loader: ImageLoaderRegistry.loader)
                 }
-                
-                updateReadMoreVisibility()
+                emptyBackgroundView.removeFromSuperview()
+                setupReadVisibility()
             }
             .cancel(with: cancelBag)
         
@@ -207,17 +223,25 @@ private extension MovieDetailsViewController {
             }
             .cancel(with: cancelBag)
         
-        viewModel.$errorMessage
+        viewModel.$error
             .compactMap { $0 }
-            .sink { [weak self] message in
-                self?.view.makeToast(message)
+            .sink { [weak self] type in
+                guard let self else { return }
+                switch type {
+                case .noInternet, .timeout:
+                    view.addSubview(emptyBackgroundView)
+                    emptyBackgroundView.snp.makeConstraints {
+                        $0.edges.equalTo(self.view.safeAreaLayoutGuide)
+                    }
+                default:
+                    emptyBackgroundView.removeFromSuperview()
+                    view.makeToast(type.localizedDescription)
+                }
             }
             .cancel(with: cancelBag)
     }
     
-    func updateReadMoreVisibility() {
-        view.layoutIfNeeded()
-        
+    func setupReadVisibility() {
         guard let text = overviewLabel.text, !text.isEmpty else {
             readMoreButton.isHidden = true
             return
@@ -231,12 +255,24 @@ private extension MovieDetailsViewController {
         sizing.font = overviewLabel.font
         sizing.text = text
         sizing.lineBreakMode = .byWordWrapping
-        let neededHeight = sizing.sizeThatFits(CGSize(width: labelWidth, height: .greatestFiniteMagnitude)).height
+        let neededHeight = sizing.sizeThatFits(
+            CGSize(
+                width: labelWidth,
+                height: .greatestFiniteMagnitude
+            )
+        ).height
         let twoLineHeight = ceil(overviewLabel.font.lineHeight * 2)
         let fitsInTwoLines = neededHeight <= twoLineHeight + 0.5
         readMoreButton.isHidden = fitsInTwoLines
         if overviewLabel.numberOfLines != 2 { overviewLabel.numberOfLines = 2 }
-        
     }
     
+    func updateReadVisibility() {
+        overviewLabel.numberOfLines = overviewLabel.numberOfLines == .zero ? 2 : .zero
+        readMoreButton.setTitle(
+            overviewLabel.numberOfLines == .zero ?
+            Constants.Components.readLess : Constants.Components.readMore,
+            for: .normal
+        )
+    }
 }

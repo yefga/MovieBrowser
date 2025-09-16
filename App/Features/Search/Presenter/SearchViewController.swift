@@ -26,25 +26,12 @@ final class SearchViewController: UIViewController {
         $0.addTarget(self, action: #selector(didPullToRefresh), for: .valueChanged)
     }
     private var dataSource: UITableViewDiffableDataSource<Int, Movie>!
-    private let imageView = UIImageView().then {
-        $0.image = UIImage(named: "initial")
-        $0.contentMode = .scaleAspectFit
-    }
-    private lazy var backgroundImageInitial = UIView().then {
-        $0.contentMode = .scaleAspectFit
-        $0.clipsToBounds = true
-        $0.addSubview(imageView)
-        imageView.snp.makeConstraints { make in
-            make.size.equalTo(300)
-            make.center.equalToSuperview()
-        }
-    }
     private lazy var tableView = UITableView().then {
         $0.registerClass(forCellClass: MovieListCell.self)
         $0.alwaysBounceVertical = true
         $0.delegate = self
         $0.refreshControl = refreshControl
-        $0.backgroundView = backgroundImageInitial
+        $0.backgroundView = emptyBackgroundView
     }
     private lazy var searchContainer = UIView().then {
         $0.layer.cornerRadius = 22
@@ -110,6 +97,13 @@ final class SearchViewController: UIViewController {
     private let loadingIndicator = UIActivityIndicatorView(style: .medium).then {
         $0.hidesWhenStopped = true
         $0.color = .secondaryLabel
+    }
+    private lazy var emptyBackgroundView = EmptyBackgroundView().then {
+        $0.configure(
+            imageName: "initial",
+            title: "Discover Your Next Favorite",
+            message: "Type a movie name and begin exploring endless stories."
+        )
     }
     private var darkModeBarButton: UIBarButtonItem?
     private var favoritesBarButton: UIBarButtonItem?
@@ -191,8 +185,7 @@ final class SearchViewController: UIViewController {
                 
             case .initial:
                 if searchTextField.text?.count ?? .zero < 3 && viewModel.rows.isEmpty {
-                    imageView.image = .init(named: "initial")
-                    tableView.backgroundView = backgroundImageInitial
+                    tableView.backgroundView = emptyBackgroundView
                 }
             case .loading:
                 searchTextField.rightViewMode = .always
@@ -207,8 +200,7 @@ final class SearchViewController: UIViewController {
                 searchTextField.rightViewMode = .never
                 loadingIndicator.stopAnimating()
                 refreshControl.endRefreshing()
-                imageView.image = .init(named: "no_data")
-                tableView.backgroundView = backgroundImageInitial
+                tableView.backgroundView = emptyBackgroundView
             default:
                 searchTextField.rightViewMode = .never
                 loadingIndicator.stopAnimating()

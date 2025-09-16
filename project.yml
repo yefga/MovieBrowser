@@ -97,6 +97,7 @@ targets:
     dependencies:
       - target: MovieCore
       - sdk: UIKit.framework
+      - package: SnapKit
 
   # ──────────────────────────────
   # App

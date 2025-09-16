@@ -25,6 +25,7 @@
 		28FFF3DA5CC466888EF7E67D /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D850E6A293D9D744F372FE7B /* CoreData.framework */; };
 		29DC661335DC9B597F502ED7 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CCFCFB015ABB93133A73B6 /* main.swift */; };
 		3054DF5CAF2CE48FDFBB7EF9 /* APIConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B9CD90185DD4B91DEC8CFAD /* APIConfig.swift */; };
+		310842EF7A9CFD62D591FB16 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = DA5E99CDFB1FC2D0E6336B28 /* SnapKit */; };
 		3197506E5912F204EFCEBF7D /* Paged.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9901724C7E2A3DD2AC01FA1 /* Paged.swift */; };
 		35A4A2D5350A014A50DB4AE3 /* MoviePersistence.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = CE6FC5053EBDBB2F32330276 /* MoviePersistence.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		3A25A5C9F60689573B77A860 /* GetMovieDetailsUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A62B3A2BCD0375E2AD1319 /* GetMovieDetailsUseCase.swift */; };
@@ -34,6 +35,7 @@
 		49746A75CB32CCDDFC1CFF15 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACA7F59EFCF1C36A8EEE03AC /* SceneDelegate.swift */; };
 		4C11021CF7096E4A6580FC44 /* MovieDetailsRepositoryInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EF94E21D6280D8989ECA7CE /* MovieDetailsRepositoryInterface.swift */; };
 		4E50F891F453B946B66C31D8 /* Primitives.swift in Sources */ = {isa = PBXBuildFile; fileRef = 247076C8607373CEB0D4D23E /* Primitives.swift */; };
+		4FDEF531A5096737591E09F4 /* EmptyBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E17248B414B38F4B5C9EC931 /* EmptyBackgroundView.swift */; };
 		50DB3192239F69C070CE2DB4 /* DetailsCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB6B8A0F91C08FA73A1AB477 /* DetailsCoordinator.swift */; };
 		53AE5DEDD80516822B079D1E /* ImageOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6FEAE7B136AE3670472BAFF /* ImageOptions.swift */; };
 		54DC194DF648283859CE857D /* CoreDataStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878AD2F1CC7E5E5EFE4AB18C /* CoreDataStack.swift */; };
@@ -294,6 +296,7 @@
 		D6FEAE7B136AE3670472BAFF /* ImageOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageOptions.swift; sourceTree = "<group>"; };
 		D850E6A293D9D744F372FE7B /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
 		D8BFFD7A7E376AD061CDF009 /* MoviePersistence.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MoviePersistence.h; sourceTree = "<group>"; };
+		E17248B414B38F4B5C9EC931 /* EmptyBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyBackgroundView.swift; sourceTree = "<group>"; };
 		E425B91AF8252F9703098DC1 /* AppCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinator.swift; sourceTree = "<group>"; };
 		E5904E5541D1DE91187C31C4 /* MovieError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieError.swift; sourceTree = "<group>"; };
 		E8A8E7532E9F05B4A14E1537 /* ImageError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageError.swift; sourceTree = "<group>"; };
@@ -367,6 +370,7 @@
 			files = (
 				CCF035121C551D6B458F394E /* MovieCore.framework in Frameworks */,
 				BA22A2FCFC496849753252DD /* UIKit.framework in Frameworks */,
+				310842EF7A9CFD62D591FB16 /* SnapKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -512,6 +516,7 @@
 			children = (
 				24EC4C5261A707A5D635A8CB /* CancelBag.swift */,
 				1732E60AF1FC21AC7206D1CA /* Colors.swift */,
+				E17248B414B38F4B5C9EC931 /* EmptyBackgroundView.swift */,
 				13BCB2852E795988BE0B1613 /* Info.plist */,
 				05861199FE5D266E1766DA00 /* ReusableView.swift */,
 				94A1D66D4FA59DD803AC7B83 /* Then.swift */,
@@ -1015,6 +1020,7 @@
 			);
 			name = MovieUI;
 			packageProductDependencies = (
+				DA5E99CDFB1FC2D0E6336B28 /* SnapKit */,
 			);
 			productName = MovieUI;
 			productReference = 65C16AB0AE80D0EF0DB020DD /* MovieUI.framework */;
@@ -1243,6 +1249,7 @@
 			files = (
 				CF6D3AD9B5BA3F90B00FADE8 /* CancelBag.swift in Sources */,
 				6459F2B32C921CAF9B864625 /* Colors.swift in Sources */,
+				4FDEF531A5096737591E09F4 /* EmptyBackgroundView.swift in Sources */,
 				E64EBAA8DC0BC07A8B408C8F /* ReusableView.swift in Sources */,
 				934DFE63250E36DEB8E062F8 /* Then.swift in Sources */,
 				627A740C0C018BDC41090AA0 /* Toast.swift in Sources */,
@@ -1786,6 +1793,11 @@
 			productName = IQKeyboardManagerSwift;
 		};
 		1D70F8AA5C38D35EF8BF7D81 /* SnapKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B362F497E4D5FA38EB217454 /* XCRemoteSwiftPackageReference "SnapKit" */;
+			productName = SnapKit;
+		};
+		DA5E99CDFB1FC2D0E6336B28 /* SnapKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = B362F497E4D5FA38EB217454 /* XCRemoteSwiftPackageReference "SnapKit" */;
 			productName = SnapKit;
