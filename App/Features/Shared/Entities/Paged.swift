@@ -9,4 +9,6 @@ public struct Paged<T>: Sendable where T: Sendable {
     public var items: [T]?
     public var page: Int?
     public var hasMore: Bool?
+    public var totalPages: Int?
+    public var totalResults: Int?
 }
