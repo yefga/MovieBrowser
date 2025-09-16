@@ -37,7 +37,6 @@ public struct CachedMovieDTO {
     }
 }
 
-
 public enum Keys {
     static let entity = "CachedMovie"
     static let id = "id"
@@ -51,7 +50,6 @@ public enum Keys {
     static let query = "query"
     static let page = "page"
 }
-
 
 public final class CoreDataMovieCache: MovieCacheStore {
     private let container: NSPersistentContainer
@@ -210,4 +208,3 @@ public final class CoreDataMovieCache: MovieCacheStore {
         return (try? context.count(for: request)) ?? 0 > 0
     }
 }
-

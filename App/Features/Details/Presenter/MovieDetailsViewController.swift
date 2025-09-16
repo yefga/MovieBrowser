@@ -49,7 +49,7 @@ final class MovieDetailsViewController: UIViewController {
         $0.textColor = .white
     }
     private lazy var readMoreButton = UIButton(type: .system).then {
-        $0.setTitle(Constants.UI.readMore, for: .normal)
+        $0.setTitle(Constants.Components.readMore, for: .normal)
         $0.contentHorizontalAlignment = .left
         $0.setTitleColor(.white, for: .normal)
         $0.addTarget(
@@ -115,10 +115,10 @@ final class MovieDetailsViewController: UIViewController {
     @objc private func toggleReadMore() {
         if overviewLabel.numberOfLines == .zero {
             overviewLabel.numberOfLines = 2
-            readMoreButton.setTitle(Constants.UI.readMore, for: .normal)
+            readMoreButton.setTitle(Constants.Components.readMore, for: .normal)
         } else {
             overviewLabel.numberOfLines = .zero
-            readMoreButton.setTitle(Constants.UI.readLess, for: .normal)
+            readMoreButton.setTitle(Constants.Components.readLess, for: .normal)
         }
     }
     
@@ -178,9 +178,9 @@ private extension MovieDetailsViewController {
                 guard let self, let model else { return }
                 titleLabel.text = model.title
                 metaLabel.text = [
-                    model.releaseDateText, Constants.UI.defaultGenre
+                    model.releaseDateText, Constants.Components.defaultGenre
                 ].compactMap { $0 }.joined(separator: " · ")
-                overviewLabel.text = model.overview ?? Constants.UI.noOverview
+                overviewLabel.text = model.overview ?? Constants.Components.noOverview
                 
                 if let base = URL(
                     string: Constants.Image.tmdbBaseW200 + (model.posterPath ?? .empty)
@@ -201,8 +201,9 @@ private extension MovieDetailsViewController {
         
         viewModel.$isFavorite
             .removeDuplicates()
-            .sink { [weak self] _ in
-                self?.updateFavoriteButton()
+            .sink { [weak self] status in
+                guard let self else { return }
+                navigationItem.rightBarButtonItem?.image = .isFavorite(condition: status)
             }
             .cancel(with: cancelBag)
         
@@ -213,11 +214,6 @@ private extension MovieDetailsViewController {
             }
             .cancel(with: cancelBag)
     }
-    
-    func updateFavoriteButton() {
-        navigationItem.rightBarButtonItem?.image = .isFavorite(condition: viewModel.isFavorite)
-    }
-    
     
     func updateReadMoreVisibility() {
         view.layoutIfNeeded()

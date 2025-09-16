@@ -34,6 +34,10 @@ final class SearchCoordinator: Coordinator {
                 container: container
             )
             self.childCoordinators.append(details)
+            details.onFinish = { [weak self, weak details] in
+                guard let self, let details else { return }
+                self.removeChild(details)
+            }
             details.start()
         }
 
@@ -45,6 +49,10 @@ final class SearchCoordinator: Coordinator {
                 container: container
             )
             self.childCoordinators.append(favorites)
+            favorites.onFinish = { [weak self, weak favorites] in
+                guard let self, let favorites else { return }
+                self.removeChild(favorites)
+            }
             favorites.start()
         }
         navigationController.setViewControllers([viewController], animated: false)
