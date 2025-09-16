@@ -24,6 +24,7 @@ final class MovieDetailsRepository: MovieDetailsRepositoryInterface {
                 title: dto.title,
                 releaseDateText: dto.releaseDate,
                 posterPath: dto.posterPath,
+                originalLanguage: dto.originalLanguage,
                 overview: dto.overview
             )
             return .success(movie)
