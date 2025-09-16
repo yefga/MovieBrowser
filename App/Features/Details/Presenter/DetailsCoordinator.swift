@@ -5,8 +5,6 @@
 //  Created by Yefga on 15/09/25.
 //
 
-// Application/Coordinators/DetailsCoordinator.swift
-
 import UIKit
 import SwiftUI
 

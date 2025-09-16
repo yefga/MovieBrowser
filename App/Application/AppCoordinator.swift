@@ -7,6 +7,7 @@
 
 import UIKit
 
+@MainActor
 protocol Coordinator: AnyObject {
     var navigationController: UINavigationController { get }
     func start()
@@ -22,6 +23,7 @@ final class AppCoordinator: Coordinator {
         self.container = container
     }
 
+    @MainActor
     func start() {
         let searchCoordinator = SearchCoordinator(
             navigationController: navigationController,

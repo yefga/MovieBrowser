@@ -89,7 +89,9 @@ final class MovieListCell: UITableViewCell {
     @objc private func didTapFavorite() {
         if self.isFavorite != nil {
             self.isFavorite?.toggle()
-            favoriteButton.setImage(UIImage.symbol((self.isFavorite ?? false) ? .heartFill : .heart), for: .normal)
+            favoriteButton.setImage(
+                .isFavorite(condition: self.isFavorite ?? false), for: .normal
+            )
             onToggleFavorite?()
         }
     }
@@ -145,8 +147,11 @@ extension MovieListCell {
             placeholder: UIImage.symbol(.photo),
             transitionDuration: 0.2
         )
+        
         isFavorite = model.isFavorite
-        favoriteButton.setImage(UIImage.symbol((isFavorite ?? false) ? .heartFill : .heart), for: .normal)
+        favoriteButton.setImage(
+            .isFavorite(condition: self.isFavorite ?? false), for: .normal
+        )
     }
 
 }

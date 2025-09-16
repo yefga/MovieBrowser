@@ -16,4 +16,9 @@ public extension UIImage {
     static func symbol(_ symbol: Symbol) -> UIImage? {
         return UIImage(systemName: symbol.rawValue)
     }
+    
+    static func isFavorite(condition: Bool) -> UIImage? {
+        UIImage(systemName: condition ? self.Symbol.heartFill.rawValue : self.Symbol.heart.rawValue)
+    }
+    
 }

@@ -14,11 +14,16 @@ final class MovieDetailsViewController: UIViewController {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
-
+    
     required init?(coder: NSCoder) { fatalError() }
     
     private let viewModel: MovieDetailsViewModel
-
+    private var cancelBag = CancelBag()
+    private let activityIndicator = UIActivityIndicatorView(style: .large).then {
+        $0.hidesWhenStopped = true
+        $0.startAnimating()
+        $0.color = .red
+    }
     private let poster = UIImageView().then {
         $0.contentMode = .scaleAspectFill
         $0.clipsToBounds = true
@@ -36,17 +41,22 @@ final class MovieDetailsViewController: UIViewController {
     private let metaLabel = UILabel().then {
         $0.font = .systemFont(ofSize: 14)
         $0.textColor = UIColor.white.withAlphaComponent(0.85)
-
+        
     }
     private let overviewLabel = UILabel().then {
         $0.font = .systemFont(ofSize: 16)
         $0.numberOfLines = 2
         $0.textColor = .white
     }
-    private let readMoreButton = UIButton(type: .system).then {
+    private lazy var readMoreButton = UIButton(type: .system).then {
         $0.setTitle(Constants.UI.readMore, for: .normal)
         $0.contentHorizontalAlignment = .left
         $0.setTitleColor(.white, for: .normal)
+        $0.addTarget(
+            self,
+            action: #selector(toggleReadMore),
+            for: .touchUpInside
+        )
     }
     private lazy var stack = UIStackView().then {
         $0.axis = .vertical
@@ -56,29 +66,31 @@ final class MovieDetailsViewController: UIViewController {
         $0.addArrangedSubview(overviewLabel)
         $0.addArrangedSubview(readMoreButton)
     }
-    private let contentContainer = UIView()
+    private lazy var contentContainer = UIView().then {
+        $0.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.bottom.equalToSuperview().inset(24)
+            make.top.greaterThanOrEqualToSuperview().inset(16)
+        }
+    }
     private lazy var scrollView = UIScrollView().then {
         $0.addSubview(contentContainer)
     }
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        view.backgroundColor = .systemBackground
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            image: UIImage.symbol(.heart),
-            style: .plain,
-            target: self,
-            action: #selector(toggleFavorite)
-        )
-
-        readMoreButton.addTarget(self, action: #selector(toggleReadMore), for: .touchUpInside)
         setupUI()
-        Task { await viewModel.load(); bind() }
+        setupBindings()
+        Task { await viewModel.load() }
     }
-
+    
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        setupTransparentNavigationBar()
+    }
+    
+    func setupTransparentNavigationBar() {
         let appearance = UINavigationBarAppearance()
         appearance.configureWithTransparentBackground()
         appearance.backgroundColor = .clear
@@ -90,88 +102,16 @@ final class MovieDetailsViewController: UIViewController {
         
         navigationItem.title = nil
     }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        navigationController?.navigationBar.setBackgroundImage(nil, for: .default)
-        navigationController?.navigationBar.shadowImage = nil
-        navigationController?.navigationBar.isTranslucent = false
-    }
-
+    
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         overlayGradientLayer.frame = overlayView.bounds
     }
-
-    private func setupUI() {
-        view.addSubview(poster)
-        view.addSubview(overlayView)
-        view.addSubview(scrollView)
-        overlayView.layer.insertSublayer(overlayGradientLayer, at: .zero)
-        overlayGradientLayer.colors = [
-            UIColor.clear.cgColor,
-            UIColor.black.withAlphaComponent(0.4).cgColor,
-            UIColor.black.withAlphaComponent(0.9).cgColor
-        ]
-        overlayGradientLayer.locations = [0.0, 0.6, 1.0]
-
-        contentContainer.addSubview(stack)
-
-        poster.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-
-        overlayView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-
-        scrollView.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide.snp.top)
-            make.leading.trailing.bottom.equalToSuperview()
-        }
-
-        contentContainer.snp.makeConstraints { make in
-            make.edges.equalTo(scrollView.contentLayoutGuide)
-            make.width.equalTo(scrollView.frameLayoutGuide.snp.width)
-            make.height.greaterThanOrEqualTo(scrollView.frameLayoutGuide.snp.height)
-        }
-
-        stack.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().inset(24)
-            make.top.greaterThanOrEqualToSuperview().inset(16)
-        }
-
-        view.sendSubviewToBack(poster)
-        view.bringSubviewToFront(scrollView)
-    }
-
-    private func bind() {
-        guard let model = viewModel.movie else { return }
-        titleLabel.text = model.title
-        metaLabel.text = [model.releaseDateText, Constants.UI.defaultGenre].compactMap { $0 }.joined(separator: " · ")
-        overviewLabel.text = model.overview ?? Constants.UI.noOverview
-
-        if let base = URL(string: Constants.Image.tmdbBaseW200 + (model.posterPath ?? .empty)) {
-            poster.setImage(url: model.posterURL(base: base), loader: ImageLoaderRegistry.loader)
-        }
-
-        navigationItem.rightBarButtonItem?.image = UIImage.symbol(viewModel.isFavorite ? .heartFill : .heart)
-        
-        viewModel.reloadDetail = { [weak self] isSuccess in
-            guard let self else { return }
-            if !isSuccess {
-                view.makeToast(viewModel.errorMessage)
-            }
-            
-        }
-    }
-
+    
     @objc private func toggleFavorite() {
         viewModel.toggleFavorite()
-        navigationItem.rightBarButtonItem?.image = UIImage.symbol(viewModel.isFavorite ? .heartFill : .heart)
     }
-
+    
     @objc private func toggleReadMore() {
         if overviewLabel.numberOfLines == .zero {
             overviewLabel.numberOfLines = 2
@@ -181,4 +121,126 @@ final class MovieDetailsViewController: UIViewController {
             readMoreButton.setTitle(Constants.UI.readLess, for: .normal)
         }
     }
+    
+}
+
+private extension MovieDetailsViewController {
+    
+    func setupUI() {
+        view.backgroundColor = .systemBackground
+        
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            image: UIImage.symbol(.heart),
+            style: .plain,
+            target: self,
+            action: #selector(toggleFavorite)
+        )
+        
+        view.addSubview(poster)
+        view.addSubview(overlayView)
+        view.addSubview(scrollView)
+        view.addSubview(activityIndicator)
+        overlayView.layer.insertSublayer(overlayGradientLayer, at: .zero)
+        overlayGradientLayer.colors = [
+            UIColor.clear.cgColor,
+            UIColor.black.withAlphaComponent(0.4).cgColor,
+            UIColor.black.withAlphaComponent(0.9).cgColor
+        ]
+        overlayGradientLayer.locations = [0.0, 0.6, 1.0]
+        
+        poster.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+        
+        overlayView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+        
+        scrollView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+            make.leading.trailing.bottom.equalToSuperview()
+        }
+        
+        contentContainer.snp.makeConstraints { make in
+            make.edges.equalTo(scrollView.contentLayoutGuide)
+            make.width.equalTo(scrollView.frameLayoutGuide.snp.width)
+            make.height.greaterThanOrEqualTo(scrollView.frameLayoutGuide.snp.height)
+        }
+        
+        activityIndicator.snp.makeConstraints {
+            $0.center.equalToSuperview()
+        }
+    }
+    
+    func setupBindings() {
+        viewModel.$movie
+            .sink { [weak self] model in
+                guard let self, let model else { return }
+                titleLabel.text = model.title
+                metaLabel.text = [
+                    model.releaseDateText, Constants.UI.defaultGenre
+                ].compactMap { $0 }.joined(separator: " · ")
+                overviewLabel.text = model.overview ?? Constants.UI.noOverview
+                
+                if let base = URL(
+                    string: Constants.Image.tmdbBaseW200 + (model.posterPath ?? .empty)
+                ) {
+                    poster.setImage(url: model.posterURL(base: base), loader: ImageLoaderRegistry.loader)
+                }
+                
+                updateReadMoreVisibility()
+            }
+            .cancel(with: cancelBag)
+        
+        viewModel.$isLoading.sink { [weak self] in
+            if $0 { self?.activityIndicator.startAnimating()
+            } else {
+                self?.activityIndicator.stopAnimating()
+            }
+        }.cancel(with: cancelBag)
+        
+        viewModel.$isFavorite
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                self?.updateFavoriteButton()
+            }
+            .cancel(with: cancelBag)
+        
+        viewModel.$errorMessage
+            .compactMap { $0 }
+            .sink { [weak self] message in
+                self?.view.makeToast(message)
+            }
+            .cancel(with: cancelBag)
+    }
+    
+    func updateFavoriteButton() {
+        navigationItem.rightBarButtonItem?.image = .isFavorite(condition: viewModel.isFavorite)
+    }
+    
+    
+    func updateReadMoreVisibility() {
+        view.layoutIfNeeded()
+        
+        guard let text = overviewLabel.text, !text.isEmpty else {
+            readMoreButton.isHidden = true
+            return
+        }
+        
+        let labelWidth = overviewLabel.bounds.width > 0
+        ? overviewLabel.bounds.width
+        : view.bounds.inset(by: view.safeAreaInsets).width - 32
+        let sizing = UILabel()
+        sizing.numberOfLines = 0
+        sizing.font = overviewLabel.font
+        sizing.text = text
+        sizing.lineBreakMode = .byWordWrapping
+        let neededHeight = sizing.sizeThatFits(CGSize(width: labelWidth, height: .greatestFiniteMagnitude)).height
+        let twoLineHeight = ceil(overviewLabel.font.lineHeight * 2)
+        let fitsInTwoLines = neededHeight <= twoLineHeight + 0.5
+        readMoreButton.isHidden = fitsInTwoLines
+        if overviewLabel.numberOfLines != 2 { overviewLabel.numberOfLines = 2 }
+        
+    }
+    
 }

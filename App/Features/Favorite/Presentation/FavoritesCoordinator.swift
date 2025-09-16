@@ -19,7 +19,7 @@ final class FavoritesCoordinator: Coordinator {
         self.navigationController = navigationController
         self.container = container
     }
-
+    
     func start() {
         let viewModel = FavoritesViewModel(
             useCase: FavoriteMovieUseCase(repository: container.favoritesRepository)

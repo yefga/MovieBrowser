@@ -7,19 +7,21 @@
 
 import Foundation
 
+@MainActor
 final class MovieDetailsViewModel: ObservableObject {
     @Published var movie: Movie?
     @Published var isFavorite: Bool = false
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
-    var reloadDetail: ((_ isSuccess: Bool) -> Void)?
     private let movieDetailsUseCase: GetMovieDetailsUseCaseInterface
     private let favoriteUseCase: FavoriteMovieUseCaseInterface
     private let movieID: Int
     
-    init(movieID: Int,
-         movieDetailsUseCase: GetMovieDetailsUseCaseInterface,
-         favoriteUseCase: FavoriteMovieUseCaseInterface) {
+    init(
+        movieID: Int,
+        movieDetailsUseCase: GetMovieDetailsUseCaseInterface,
+        favoriteUseCase: FavoriteMovieUseCaseInterface
+    ) {
         self.movieID = movieID
         self.movieDetailsUseCase = movieDetailsUseCase
         self.favoriteUseCase = favoriteUseCase
@@ -35,19 +37,16 @@ final class MovieDetailsViewModel: ObservableObject {
             if let id = movie?.id {
                 self.isFavorite = favoriteUseCase.isFavorite(by: id)
             }
-            reloadDetail?(true)
         case .failure(let error):
             self.errorMessage = String(describing: error)
-            reloadDetail?(false)
         }
     }
     
     func toggleFavorite() {
+        guard var current = movie else { return }
         isFavorite.toggle()
-        var item = movie
-        item?.isFavorite = isFavorite
-        if let item {
-            favoriteUseCase.setFavorite(item: item)
-        }
+        current.isFavorite = isFavorite
+        movie = current
+        favoriteUseCase.setFavorite(item: current)
     }
 }
