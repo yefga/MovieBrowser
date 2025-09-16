@@ -29,7 +29,6 @@ fi
 # Generate
 bold "Generating Xcode project with XcodeGen…"
 xcodegen generate
-ok "Project generated. Open $PROJECT_BUNDLE"
 
 # Open the .xcodeproj
 if [[ ! -d "$PROJECT_BUNDLE" ]]; then
