@@ -10,9 +10,6 @@ import UIKit
 import Network
 import MovieUI
 
-/// A singleton that monitors network connectivity and shows a persistent toast
-/// when the device is offline. The toast is hidden automatically when the
-/// connection is restored.
 final class NetworkMonitor {
     static let shared = NetworkMonitor()
 
@@ -27,8 +24,6 @@ final class NetworkMonitor {
 
     private init() {}
 
-    /// Starts monitoring connectivity for the given window and manages the offline toast.
-    /// - Parameter window: The app's main window on which to present the toast.
     func start(on window: UIWindow) {
         self.window = window
         guard !isMonitoring else { return }
@@ -44,34 +39,30 @@ final class NetworkMonitor {
         monitor.start(queue: queue)
     }
 
-    /// Stops monitoring and hides any active offline toast.
     func stop() {
         guard isMonitoring else { return }
         isMonitoring = false
         monitor.cancel()
 
         DispatchQueue.main.async {
-            if let window = self.window, let toast = self.offlineToastView {
-                window.hideToast(toast)
-                self.offlineToastView = nil
+            if let window = self.window {
+                // Dismiss any visible or queued toasts (including activity) to avoid lingering UI
+                window.hideAllToasts(includeActivity: true, clearQueue: true)
             }
+            self.offlineToastView = nil
             // Restore tap-to-dismiss if we modified it
             ToastManager.shared.isTapToDismissEnabled = self.previousTapToDismissSetting
         }
     }
-
-    // MARK: - Private
-
+    
     private func handlePathUpdate(_ path: NWPath) {
         let isConnected = (path.status == .satisfied)
         lastIsConnected = isConnected
         if isConnected {
-            // Hide offline toast if showing
-            if let window = window, let toast = offlineToastView {
-                window.hideToast(toast)
-                offlineToastView = nil
+            if let window = window {
+                window.hideAllToasts(includeActivity: true, clearQueue: true)
             }
-            // Restore global tap-to-dismiss
+            offlineToastView = nil
             ToastManager.shared.isTapToDismissEnabled = previousTapToDismissSetting
         } else {
             guard let window = window else { return }
@@ -79,10 +70,7 @@ final class NetworkMonitor {
         }
     }
 
-    /// Presents the offline toast if not already visible, adds a spinner, and
-    /// uses the completion handler to re-show it while still offline.
     private func showOrRefreshOfflineToast(on window: UIWindow) {
-        // If already showing, do nothing — the completion will handle refresh
         if offlineToastView != nil { return }
 
         var style = ToastManager.shared.style
@@ -92,7 +80,6 @@ final class NetworkMonitor {
         style.cornerRadius = 12
         style.displayShadow = false
 
-        // Use a title as a retry hint and message for clarity
         let toastView = try? window.toastViewForMessage(
             "No Internet Connection",
             title: "Trying to reconnect…",
@@ -101,7 +88,6 @@ final class NetworkMonitor {
         )
         guard let toast = toastView else { return }
 
-        // Add a small activity indicator to the toast view
         let indicator = UIActivityIndicatorView(style: .medium)
         indicator.color = .white
         let padding: CGFloat = 10
@@ -113,17 +99,15 @@ final class NetworkMonitor {
         indicator.startAnimating()
         toast.addSubview(indicator)
 
-        // Ensure the toast cannot be dismissed by tap while offline
         previousTapToDismissSetting = ToastManager.shared.isTapToDismissEnabled
         ToastManager.shared.isTapToDismissEnabled = false
 
-        // Show for a short duration and refresh as long as we're offline
+        if lastIsConnected { return }
+
         window.showToast(toast, duration: 8, position: .bottom) { [weak self] _ in
             guard let self = self else { return }
-            // Clear the reference since the toast has completed its cycle
             if self.offlineToastView === toast { self.offlineToastView = nil }
 
-            // If still offline, show again to keep it persistent
             if !self.lastIsConnected, let window = self.window {
                 self.showOrRefreshOfflineToast(on: window)
             }

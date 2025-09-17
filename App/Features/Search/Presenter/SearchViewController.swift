@@ -180,16 +180,15 @@ final class SearchViewController: UIViewController {
         viewModel.$state.sink { [weak self] in
             guard let self else { return }
             switch $0 {
-            case .success:
-                applySnapshot()
-                
             case .initial:
                 if searchTextField.text?.count ?? .zero < 3 && viewModel.rows.isEmpty {
                     tableView.backgroundView = emptyBackgroundView
                 }
+                applySnapshot()
             case .loading:
                 searchTextField.rightViewMode = .always
                 loadingIndicator.startAnimating()
+
             case .error(let message):
                 searchTextField.rightViewMode = .never
                 loadingIndicator.stopAnimating()
@@ -201,12 +200,15 @@ final class SearchViewController: UIViewController {
                 loadingIndicator.stopAnimating()
                 refreshControl.endRefreshing()
                 tableView.backgroundView = emptyBackgroundView
+                
             default:
                 searchTextField.rightViewMode = .never
                 loadingIndicator.stopAnimating()
                 refreshControl.endRefreshing()
 
             }
+            applySnapshot()
+
         }.cancel(with: cancelBag)
 
         viewModel.$title

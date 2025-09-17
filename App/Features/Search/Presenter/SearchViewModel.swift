@@ -58,9 +58,7 @@ final class SearchViewModel: ObservableObject {
         if text.count >= limitCharacter {
             performTask()
         } else {
-            if rows.isEmpty {
-                state = .initial
-            }
+            state = .initial
         }
     }
 
